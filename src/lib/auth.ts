@@ -4,7 +4,9 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
-import { User, UserRole } from '@prisma/client';
+
+// Define types inline to avoid Prisma client generation issues during build
+type UserRole = 'USER' | 'MODERATOR' | 'ADMIN';
 
 declare module 'next-auth' {
   interface Session {
