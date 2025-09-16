@@ -26,6 +26,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WebRTCManager } from './webrtc-manager';
 
 // Mock data for live sessions
 const mockLiveSessions = [
@@ -103,7 +104,7 @@ export function LiveStreamPage({ sessionId }: LiveStreamPageProps) {
       title: 'New Live Stream',
       host: currentUser,
       viewerCount: 0,
-      state: 'SCHEDULED' as const,
+      state: 'LIVE' as const,
       mode: 'VIDEO' as const,
       category: 'Discussion',
       startTime: new Date(),
@@ -117,6 +118,7 @@ export function LiveStreamPage({ sessionId }: LiveStreamPageProps) {
 
   if (selectedSession) {
     const session = [...mockLiveSessions, ...liveSessions].find(s => s.id === selectedSession);
+    console.log("ln120",session)
     if (!session) {
       return (
         <div className="container mx-auto px-4 py-8">
@@ -151,21 +153,10 @@ export function LiveStreamPage({ sessionId }: LiveStreamPageProps) {
             {/* Stream Player */}
             <Card>
               <CardContent className="p-0">
-                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                <div className="relative aspect-video bg-black rounded-lg ">
                   {session.state === 'LIVE' ? (
-                    <div className="w-full h-full">
-                      <video
-                        className="w-full h-full object-cover"
-                        controls
-                        autoPlay
-                        playsInline
-                      >
-                        <source 
-                          src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" 
-                          type="video/mp4" 
-                        />
-                        Your browser does not support the video tag.
-                      </video>
+                    <div>
+                      <WebRTCManager sessionId={session.id}/>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
