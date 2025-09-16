@@ -1,0 +1,314 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum LiveSessionMode {
+  AUDIO
+  VIDEO
+}
+
+enum LiveSessionState {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+enum GroupRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+  OWNER
+}
+
+enum NotificationKind {
+  FOLLOW
+  MENTION
+  LIVE_START
+  EVENT_REMINDER
+  DM_MESSAGE
+  GROUP_INVITE
+  MISSED_CALL
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  handle          String   @unique
+  password        String?
+  displayName     String?
+  avatarUrl       String?
+  bio             String?
+  churchAffiliation String?
+  links           Json?
+  role            UserRole @default(USER)
+  settings        Json?
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  following       Follow[] @relation("Follower")
+  followers       Follow[] @relation("Followee")
+  statuses        Status[]
+  hostedSessions  LiveSession[] @relation("Host")
+  liveComments    LiveComment[]
+  groupMemberships GroupMember[]
+  ownedGroups     Group[]
+  channelMessages Message[]
+  dmParticipants  DmParticipant[]
+  dmMessages      DmMessage[]
+  events          Event[]
+  notifications   Notification[]
+  reports         Report[] @relation("Reporter")
+  reportedBy      Report[] @relation("Reported")
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followeeId  String
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee    User @relation("Followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@map("follows")
+}
+
+model Status {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // 'status' | 'live'
+  text      String?
+  mediaUrl  String?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("statuses")
+}
+
+model Group {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean   @default(true)
+  ownerId     String
+  coverUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  owner       User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  channels    Channel[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String    @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupRole @default(MEMBER)
+  createdAt DateTime  @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model Channel {
+  id        String   @id @default(cuid())
+  groupId   String
+  name      String
+  kind      String   // 'chat' | 'topic'
+  isPrivate Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("channels")
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  channelId   String
+  senderId    String
+  body        String
+  attachments Json?
+  createdAt   DateTime  @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+
+  channel     Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender      User    @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Dm {
+  id        String   @id @default(cuid())
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  participants DmParticipant[]
+  messages     DmMessage[]
+
+  @@map("dms")
+}
+
+model DmParticipant {
+  id     String @id @default(cuid())
+  dmId   String
+  userId String
+
+  dm     Dm   @relation(fields: [dmId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([dmId, userId])
+  @@map("dm_participants")
+}
+
+model DmMessage {
+  id          String    @id @default(cuid())
+  dmId        String
+  senderId    String
+  body        String
+  attachments Json?
+  createdAt   DateTime  @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+
+  dm          Dm   @relation(fields: [dmId], references: [id], onDelete: Cascade)
+  sender      User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("dm_messages")
+}
+
+model LiveSession {
+  id            String           @id @default(cuid())
+  hostId        String
+  title         String
+  description   String?
+  mode          LiveSessionMode
+  state         LiveSessionState @default(SCHEDULED)
+  rtmpKey       String?
+  hlsUrl        String?
+  webrtcRoomId  String?
+  isRecorded    Boolean          @default(false)
+  replayUrl     String?
+  createdAt     DateTime         @default(now())
+  startedAt     DateTime?
+  endedAt       DateTime?
+
+  host          User @relation("Host", fields: [hostId], references: [id], onDelete: Cascade)
+  comments      LiveComment[]
+
+  @@map("live_sessions")
+}
+
+model LiveComment {
+  id          String   @id @default(cuid())
+  sessionId   String
+  userId      String
+  body        String?
+  reaction    String?
+  timestampMs Int?
+  createdAt   DateTime @default(now())
+
+  session     LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("live_comments")
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime?
+  location    String?
+  isLive      Boolean     @default(false)
+  heroUrl     String?
+  createdById String
+  status      EventStatus @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  createdBy   User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  kind      NotificationKind
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Report {
+  id         String    @id @default(cuid())
+  reporterId String
+  reportedId String?
+  targetType String    // 'user' | 'message' | 'session' | 'group'
+  targetId   String
+  reason     String
+  notes      String?
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  reporter   User @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported   User? @relation("Reported", fields: [reportedId], references: [id], onDelete: SetNull)
+
+  @@map("reports")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor      User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}

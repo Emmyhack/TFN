@@ -37,11 +37,25 @@ export default function SignUpPage() {
   const onSubmit = async (data: SignUp) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual sign up logic
-      console.log('Sign up data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Registration failed');
+      }
+
+      // Redirect to sign in page on success
+      window.location.href = '/auth/signin?message=Registration successful! Please sign in.';
     } catch (error) {
       console.error('Sign up error:', error);
+      alert(error instanceof Error ? error.message : 'Registration failed');
     } finally {
       setIsLoading(false);
     }

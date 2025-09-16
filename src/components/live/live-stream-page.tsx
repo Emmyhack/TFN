@@ -1,463 +1,167 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Breadcrumb, commonBreadcrumbs } from '@/components/ui/breadcrumb';
-import { useAppStore } from '@/lib/store';
+import { Button } from '@/components/ui/button';
 import { 
-  Video, 
-  Radio, 
   Users, 
-  Calendar, 
-  Search,
-  Filter,
-  Plus,
-  Wifi,
-  WifiOff,
+  Heart,
+  Share,
+  Settings,
+  Video,
+  MessageCircle,
+  UserPlus,
   Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Maximize,
-  MessageSquare
+  Plus
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-// Mock data for live sessions
-const mockLiveSessions = [
-  {
-    id: '1',
-    title: 'Daily Fellowship Discussion',
-    host: {
-      id: 'host1',
-      displayName: 'John Smith',
-      avatarUrl: undefined,
-    },
-    viewerCount: 245,
-    state: 'LIVE' as const,
-    mode: 'VIDEO' as const,
-    category: 'Discussion',
-    startTime: new Date(),
-  },
-  {
-    id: '2',
-    title: 'Morning Prayer Session',
-    host: {
-      id: 'host2',
-      displayName: 'Sarah Johnson',
-      avatarUrl: undefined,
-    },
-    viewerCount: 89,
-    state: 'LIVE' as const,
-    mode: 'AUDIO' as const,
-    category: 'Prayer',
-    startTime: new Date(),
-  },
-  {
-    id: '3',
-    title: 'Youth Bible Study',
-    host: {
-      id: 'host3',
-      displayName: 'Michael Chen',
-      avatarUrl: undefined,
-    },
-    viewerCount: 156,
-    state: 'SCHEDULED' as const,
-    mode: 'VIDEO' as const,
-    category: 'Bible Study',
-    startTime: new Date(Date.now() + 3600000), // 1 hour from now
-  },
-];
 
 interface LiveStreamPageProps {
-  sessionId?: string;
+  streamId?: string;
+  className?: string;
 }
 
-export function LiveStreamPage({ sessionId }: LiveStreamPageProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isCreatingStream, setIsCreatingStream] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<string | null>(sessionId || null);
-  
-  const { currentUser, liveSessions, addLiveSession } = useAppStore();
+export function LiveStreamPage({ streamId, className = '' }: LiveStreamPageProps) {
+  const [isLive, setIsLive] = useState(true);
+  const [viewerCount, setViewerCount] = useState(42);
+  const [likes, setLikes] = useState(156);
 
-  const categories = ['all', 'Discussion', 'Prayer', 'Bible Study', 'Worship', 'Youth', 'Teaching'];
+  return (
+    <div className={`min-h-screen bg-black text-white ${className}`}>
+      {/* Video Player */}
+      <div className="relative aspect-video bg-gray-900">
+        <video 
+          className="w-full h-full object-cover" 
+          controls
+          autoPlay
+          muted
+        >
+          <source src="/sample-stream.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        
+        {/* Live indicator */}
+        {isLive && (
+          <div className="absolute top-4 left-4">
+            <Badge className="bg-red-500 animate-pulse">
+              <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
+              LIVE
+            </Badge>
+          </div>
+        )}
 
-  const filteredSessions = mockLiveSessions.filter(session => {
-    const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         session.host.displayName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || session.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+        {/* Viewer count */}
+        <div className="absolute top-4 right-4">
+          <Badge variant="secondary" className="bg-black/50 text-white">
+            <Users className="w-4 h-4 mr-1" />
+            {viewerCount}
+          </Badge>
+        </div>
 
-  const handleCreateStream = () => {
-    if (!currentUser) return;
-
-    const newSession = {
-      id: Date.now().toString(),
-      hostId: currentUser.id,
-      title: 'New Live Stream',
-      host: currentUser,
-      viewerCount: 0,
-      state: 'SCHEDULED' as const,
-      mode: 'VIDEO' as const,
-      category: 'Discussion',
-      startTime: new Date(),
-      isRecorded: false,
-    };
-
-    addLiveSession(newSession);
-    setSelectedSession(newSession.id);
-    setIsCreatingStream(false);
-  };
-
-  if (selectedSession) {
-    const session = [...mockLiveSessions, ...liveSessions].find(s => s.id === selectedSession);
-    if (!session) {
-      return (
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Stream Not Found</h1>
-            <Button variant="secondary" onClick={() => setSelectedSession(null)}>
-              Back to Live Streams
+        {/* Stream controls overlay */}
+        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" className="bg-black/50">
+              <Heart className="w-4 h-4 mr-2" />
+              {likes}
+            </Button>
+            <Button size="sm" variant="secondary" className="bg-black/50">
+              <Share className="w-4 h-4" />
+            </Button>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" className="bg-black/50">
+              <UserPlus className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="secondary" className="bg-black/50">
+              <Settings className="w-4 h-4" />
             </Button>
           </div>
         </div>
-      );
-    }
+      </div>
 
-    const isHost = currentUser?.id === session.host.id;
-
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Breadcrumb items={commonBreadcrumbs.live} className="mb-6" />
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setSelectedSession(null)}
-            className="mb-4 hover:bg-secondary/80"
-          >
-            ← Back to Live Streams
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Stream */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Stream Player */}
-            <Card>
-              <CardContent className="p-0">
-                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                  {session.state === 'LIVE' ? (
-                    <div className="w-full h-full">
-                      <video
-                        className="w-full h-full object-cover"
-                        controls
-                        autoPlay
-                        playsInline
-                      >
-                        <source 
-                          src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" 
-                          type="video/mp4" 
-                        />
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <Video className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                        <h3 className="text-lg font-medium mb-2">Stream Not Started</h3>
-                        <p className="text-muted-foreground">
-                          {session.state === 'SCHEDULED' ? 'Stream will start soon' : 'Stream has ended'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Stream overlay */}
-                  <div className="absolute top-4 left-4">
-                    <Badge 
-                      variant={session.state === 'LIVE' ? 'destructive' : 'secondary'}
-                      className={cn(session.state === 'LIVE' && 'animate-pulse')}
-                    >
-                      <Wifi className="w-3 h-3 mr-1" />
-                      {session.state}
-                    </Badge>
-                  </div>
-                  
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="secondary">
-                      <Users className="w-3 h-3 mr-1" />
-                      {session.viewerCount} viewers
-                    </Badge>
+      {/* Stream info */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Main content */}
+          <div className="flex-1">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white">
+                  Morning Prayer & Fellowship
+                </CardTitle>
+                <CardDescription className="text-gray-300">
+                  Join us for our daily morning prayer session and fellowship discussion.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 mb-4">
+                  <img 
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face"
+                    alt="Host"
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <div>
+                    <p className="font-semibold text-white">Pastor John Smith</p>
+                    <p className="text-sm text-gray-400">Host</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            {/* Stream Controls */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Avatar>
-                      <AvatarImage src={session.host.avatarUrl} />
-                      <AvatarFallback>{session.host.displayName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold">{session.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Hosted by {session.host.displayName}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    {isHost && session.state === 'LIVE' && (
-                      <Button variant="destructive" size="sm">
-                        End Stream
-                      </Button>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => setSelectedSession(null)}>
-                      Leave
-                    </Button>
-                  </div>
+                
+                <div className="flex gap-2 mb-4">
+                  <Badge variant="outline">Prayer</Badge>
+                  <Badge variant="outline">Fellowship</Badge>
+                  <Badge variant="outline">Community</Badge>
                 </div>
+                
+                <p className="text-gray-300 mb-4">
+                  Welcome to our morning prayer session. Today we&apos;ll be focusing on 
+                  gratitude and community support. Feel free to share your prayer 
+                  requests in the chat.
+                </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Chat Sidebar */}
-          <div className="space-y-6">
-            {/* Live Chat */}
-            <Card>
+          {/* Chat sidebar */}
+          <div className="w-full lg:w-80">
+            <Card className="bg-gray-900 border-gray-700 h-96">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="w-5 h-5" />
-                  <span>Live Chat</span>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5" />
+                  Live Chat
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Chat messages area */}
-                  <div className="h-64 overflow-y-auto space-y-2 border rounded-lg p-3 bg-muted/20">
-                    <div className="text-center text-sm text-muted-foreground py-4">
-                      Chat messages will appear here during the live stream
-                    </div>
+              <CardContent className="p-0">
+                <div className="h-64 overflow-y-auto p-4 space-y-2">
+                  <div className="text-sm">
+                    <span className="font-semibold text-blue-400">Sarah:</span>
+                    <span className="text-gray-300 ml-2">Thank you for this session!</span>
                   </div>
-                  
-                  {/* Chat input */}
-                  <div className="flex space-x-2">
-                    <Input
+                  <div className="text-sm">
+                    <span className="font-semibold text-green-400">Mike:</span>
+                    <span className="text-gray-300 ml-2">Amen to that prayer 🙏</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold text-purple-400">Grace:</span>
+                    <span className="text-gray-300 ml-2">Can you pray for my family?</span>
+                  </div>
+                </div>
+                <div className="p-4 border-t border-gray-700">
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
                       placeholder="Type a message..."
-                      className="flex-1"
+                      className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400"
                     />
                     <Button size="sm">Send</Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Stream Info</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Join us for an inspiring discussion about faith, community, and fellowship.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Category</h4>
-                  <Badge variant="outline">{session.category}</Badge>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Started</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {session.startTime?.toLocaleTimeString() || 'Time not available'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Live Streams</h1>
-            <p className="text-muted-foreground">Join live conversations and fellowship</p>
-          </div>
-          
-          <Button variant="gradient" onClick={() => setIsCreatingStream(true)} className="w-fit">
-            <Plus className="w-4 h-4 mr-2" />
-            Start Stream
-          </Button>
-        </div>
-
-        {/* Search and Filters */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search streams..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex space-x-2 overflow-x-auto">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category)}
-                    className="whitespace-nowrap hover:bg-secondary/80"
-                  >
-                    {category === 'all' ? 'All' : category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Live Streams Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSessions.map((session) => (
-            <Card 
-              key={session.id} 
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedSession(session.id)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant={session.state === 'LIVE' ? 'destructive' : 'secondary'}
-                      className={cn(
-                        session.state === 'LIVE' && 'animate-pulse',
-                        'flex items-center space-x-1'
-                      )}
-                    >
-                      {session.state === 'LIVE' ? (
-                        <Wifi className="w-3 h-3" />
-                      ) : (
-                        <WifiOff className="w-3 h-3" />
-                      )}
-                      <span>{session.state}</span>
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {session.mode === 'VIDEO' ? (
-                        <Video className="w-3 h-3 mr-1" />
-                      ) : (
-                        <Radio className="w-3 h-3 mr-1" />
-                      )}
-                      {session.mode}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span>{session.viewerCount}</span>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-lg line-clamp-2">{session.title}</h3>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={session.host.avatarUrl} />
-                        <AvatarFallback className="text-xs">
-                          {session.host.displayName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-muted-foreground">
-                        {session.host.displayName}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-xs">
-                      {session.category}
-                    </Badge>
-                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      <span>
-                        {session.state === 'LIVE' ? 'Started' : 'Starts'} {session.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredSessions.length === 0 && (
-          <div className="text-center py-12">
-            <Video className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No streams found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery ? 'Try adjusting your search or filters' : 'No live streams are currently available'}
-            </p>
-            <Button variant="gradient" onClick={() => setIsCreatingStream(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Start the first stream
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Create Stream Modal */}
-      {isCreatingStream && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Start Live Stream</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Ready to start streaming? Your stream will be visible to all fellowship members.
-              </p>
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setIsCreatingStream(false)}
-                  className="hover:bg-secondary/80"
-                >
-                  Cancel
-                </Button>
-                <Button variant="gradient" onClick={handleCreateStream}>
-                  Start Stream
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

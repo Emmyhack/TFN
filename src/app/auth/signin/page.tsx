@@ -26,11 +26,22 @@ export default function SignInPage() {
   const onSubmit = async (data: SignIn) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual sign in logic
-      console.log('Sign in data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const { signIn } = await import('next-auth/react');
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Redirect to dashboard on success
+      window.location.href = '/dashboard';
     } catch (error) {
       console.error('Sign in error:', error);
+      alert(error instanceof Error ? error.message : 'Sign in failed');
     } finally {
       setIsLoading(false);
     }
