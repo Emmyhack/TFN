@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ interface WebRTCManagerProps {
   isHost?: boolean;
 }
 
-export function WebRTCManager({ sessionId, isHost = false }: WebRTCManagerProps) {
+export function WebRTCManager({ sessionId, isHost = true }: WebRTCManagerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const {
     localStream,
@@ -24,7 +25,7 @@ export function WebRTCManager({ sessionId, isHost = false }: WebRTCManagerProps)
     addRemoteStream,
     removeRemoteStream,
   } = useAppStore();
-
+console.log("ln28",isStreaming)
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
@@ -117,8 +118,8 @@ export function WebRTCManager({ sessionId, isHost = false }: WebRTCManagerProps)
       }
 
       // Add local stream tracks to peer connection
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
+      stream.getTracks().forEach((track: MediaStreamTrack) => {
+        pc.addTrack(track, stream as MediaStream);
       });
 
       setIsStreaming(true);
@@ -139,7 +140,7 @@ export function WebRTCManager({ sessionId, isHost = false }: WebRTCManagerProps)
   // Stop streaming
   const stopStreaming = useCallback(() => {
     if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+      localStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       setLocalStream(null);
     }
 
@@ -205,7 +206,7 @@ export function WebRTCManager({ sessionId, isHost = false }: WebRTCManagerProps)
         )}
 
         {/* Video Preview */}
-        <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
+        <div className="relative bg-black  rounded-lg overflow-hidden aspect-video">
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
