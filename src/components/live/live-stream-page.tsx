@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
-import { useUserStore } from '@/lib/stores/user-store';
-import { useLiveSessionStore } from '@/lib/stores/live-session-store';
+import { useAppStore } from '@/lib/store';
 import { 
   Video, 
   Radio, 
@@ -52,8 +51,7 @@ export function LiveStreamPage({ sessionId, className = '' }: LiveStreamPageProp
   const [isCreatingStream, setIsCreatingStream] = useState(false);
   const [selectedSession, setSelectedSession] = useState<string | null>(sessionId || null);
   
-  const { currentUser } = useUserStore();
-  const { liveSessions, addLiveSession } = useLiveSessionStore();
+  const { currentUser, liveSessions, addLiveSession } = useAppStore();
 
   const categories = ['all', 'Discussion', 'Prayer', 'Bible Study', 'Worship', 'Youth', 'Teaching'];
 
@@ -366,7 +364,7 @@ export function LiveStreamPage({ sessionId, className = '' }: LiveStreamPageProp
                     <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                       <Calendar className="w-3 h-3" />
                       <span>
-                        {session.state === 'LIVE' ? 'Started' : 'Starts'} {session.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {session.state === 'LIVE' ? 'Started' : 'Starts'} {session.startTime?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'Time not set'}
                       </span>
                     </div>
                   </div>
