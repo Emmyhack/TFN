@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+
+// Force dynamic rendering to avoid pre-render issues with NextAuth
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -11,7 +15,7 @@ import { Video, Users, Search, Plus, Play, Calendar, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils';
 
 export default function LivePage() {
-  const { data: session } = useSession();
+  const session = useSession();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -71,7 +75,7 @@ export default function LivePage() {
   });
 
   const handleStartStream = () => {
-    if (!session) {
+    if (!session.data) {
       router.push('/auth/signin');
       return;
     }
@@ -147,12 +151,13 @@ export default function LivePage() {
               className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
               onClick={() => handleJoinStream(stream.id)}
             >
-              <div className="aspect-video relative overflow-hidden">
+              <div className="relative aspect-video">
                 {stream.thumbnailUrl ? (
-                  <img 
+                  <Image 
                     src={stream.thumbnailUrl} 
                     alt={stream.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
@@ -196,13 +201,15 @@ export default function LivePage() {
                       {stream.description}
                     </p>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <img 
+                      <Image 
                         src={stream.host.avatarUrl} 
                         alt={stream.host.displayName}
-                        className="w-6 h-6 rounded-full"
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                      />
+                      <span className="text-sm text-muted-foreground">
                       />
                       <span className="text-sm text-muted-foreground">
                         {stream.host.displayName}

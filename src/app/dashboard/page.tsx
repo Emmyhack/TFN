@@ -1,232 +1,111 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import dynamicImport from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+// Force dynamic rendering to avoid pre-render issues with NextAuth
+export const dynamic = 'force-dynamic';
 import { Badge } from '@/components/ui/badge';
+import { HighlightsRail } from '@/components/ui/story-ring';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Header } from '@/components/layout/header';
 import { 
   Video, 
   Mic, 
   Users, 
   Calendar, 
-  Settings, 
-  Plus,
-  Play,
-  BarChart3,
-  Eye,
-  Clock,
+  MessageCircle, 
   TrendingUp,
-  MessageSquare,
+  Play,
+  Eye,
   Heart,
-  Share,
-  Edit
+  Share2,
+  Plus
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-interface LiveStream {
-  id: string;
-  title: string;
-  description?: string;
-  isLive: boolean;
-  viewerCount: number;
-  startedAt?: Date;
-  thumbnailUrl?: string;
-  duration?: number;
-}
+// Dynamic import to prevent SSR issues
+const Header = dynamicImport(() => import('@/components/layout/header').then(mod => ({ default: mod.Header })), { ssr: false });
 
-interface StreamStats {
-  totalStreams: number;
-  totalViewers: number;
-  totalWatchTime: number;
-  avgViewers: number;
-}
+// Mock data
+const mockUser = {
+  id: '1',
+  displayName: 'Demo User',
+  handle: 'demouser',
+  avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
+};
+
+const mockStories = [
+  {
+    user: {
+      id: '1',
+      displayName: 'Pastor John',
+      handle: 'pastorjohn',
+      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    },
+    isLive: true,
+    onClick: () => console.log('Pastor John live clicked'),
+  },
+  {
+    user: {
+      id: '2', 
+      displayName: 'Sarah M.',
+      handle: 'sarahm',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108755-2616b5b42d5c?w=150&h=150&fit=crop&crop=face',
+    },
+    hasUpdate: true,
+    onClick: () => console.log('Sarah update clicked'),
+  },
+  {
+    user: {
+      id: '3',
+      displayName: 'David K.',
+      handle: 'davidk',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    },
+    onClick: () => console.log('David clicked'),
+  },
+];
+
+const mockRecentSessions = [
+  {
+    id: '1',
+    title: 'Sunday Morning Service',
+    host: 'Pastor John',
+    duration: '01:23:45',
+    views: 245,
+    likes: 32,
+    thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop',
+    createdAt: '2024-01-15T10:00:00Z',
+  },
+  {
+    id: '2',
+    title: 'Wednesday Bible Study',
+    host: 'Elder Smith',
+    duration: '45:12',
+    views: 89,
+    likes: 12,
+    thumbnail: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=200&fit=crop',
+    createdAt: '2024-01-12T19:00:00Z',
+  },
+];
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [isCreatingStream, setIsCreatingStream] = useState(false);
-  const [newStreamTitle, setNewStreamTitle] = useState('');
-  const [newStreamDescription, setNewStreamDescription] = useState('');
-  const [userStreams, setUserStreams] = useState<LiveStream[]>([]);
-  const [stats, setStats] = useState<StreamStats>({
-    totalStreams: 0,
-    totalViewers: 0,
-    totalWatchTime: 0,
-    avgViewers: 0,
-  });
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/auth/signin');
-      return;
-    }
-  }, [session, status, router]);
-
-  // Load user's streams and stats
-  useEffect(() => {
-    if (session?.user) {
-      loadUserStreams();
-      loadUserStats();
-    }
-  }, [session]);
-
-  const loadUserStreams = async () => {
-    try {
-      // Mock data for now - replace with actual API call
-      const mockStreams: LiveStream[] = [
-        {
-          id: '1',
-          title: 'Morning Prayer Session',
-          description: 'Join us for our daily morning prayer and meditation',
-          isLive: true,
-          viewerCount: 45,
-          startedAt: new Date(Date.now() - 1800000), // 30 minutes ago
-          thumbnailUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop',
-        },
-        {
-          id: '2',
-          title: 'Bible Study: Acts Chapter 2',
-          description: 'Deep dive into the early church and Pentecost',
-          isLive: false,
-          viewerCount: 89,
-          duration: 3600, // 1 hour
-          thumbnailUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=200&fit=crop',
-        },
-        {
-          id: '3',
-          title: 'Youth Fellowship Discussion',
-          description: 'Weekly discussion for young believers',
-          isLive: false,
-          viewerCount: 67,
-          duration: 2700, // 45 minutes
-          thumbnailUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=300&h=200&fit=crop',
-        }
-      ];
-      setUserStreams(mockStreams);
-    } catch (error) {
-      console.error('Error loading streams:', error);
-    }
-  };
-
-  const loadUserStats = async () => {
-    try {
-      // Mock data for now - replace with actual API call
-      const mockStats: StreamStats = {
-        totalStreams: 12,
-        totalViewers: 1234,
-        totalWatchTime: 45600, // in seconds
-        avgViewers: 67,
-      };
-      setStats(mockStats);
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
-
-  const createNewStream = async () => {
-    if (!newStreamTitle.trim()) return;
-
-    try {
-      // Create new stream
-      const streamId = Date.now().toString();
-      const newStream: LiveStream = {
-        id: streamId,
-        title: newStreamTitle,
-        description: newStreamDescription,
-        isLive: false,
-        viewerCount: 0,
-      };
-
-      setUserStreams(prev => [newStream, ...prev]);
-      setIsCreatingStream(false);
-      setNewStreamTitle('');
-      setNewStreamDescription('');
-
-      // Navigate to the stream
-      router.push(`/live/${streamId}`);
-    } catch (error) {
-      console.error('Error creating stream:', error);
-    }
-  };
-
-  const startLiveStream = async (streamId: string) => {
-    try {
-      // Update stream to live status
-      setUserStreams(prev => 
-        prev.map(stream => 
-          stream.id === streamId 
-            ? { ...stream, isLive: true, startedAt: new Date() }
-            : stream
-        )
-      );
-
-      // Navigate to live stream
-      router.push(`/live/${streamId}`);
-    } catch (error) {
-      console.error('Error starting stream:', error);
-    }
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  const formatWatchTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    if (hours > 1000) {
-      return `${Math.floor(hours / 1000)}k hours`;
-    }
-    return `${hours} hours`;
-  };
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header user={session.user} />
+      <Header user={mockUser} />
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Welcome back, {session.user.displayName}!</h1>
+            <h1 className="text-3xl font-bold">Welcome back, {mockUser.displayName}!</h1>
             <p className="text-muted-foreground">Ready to connect with your community?</p>
           </div>
           <div className="flex space-x-2">
-            <Button 
-              size="lg" 
-              onClick={() => setIsCreatingStream(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
+            <Button size="lg">
               <Video className="w-5 h-5 mr-2" />
-              Start Stream
+              Go Live
             </Button>
             <Button size="lg" variant="outline">
               <Mic className="w-5 h-5 mr-2" />
@@ -240,268 +119,189 @@ export default function DashboardPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Video className="w-5 h-5 text-blue-600" />
-                </div>
+                <Users className="w-8 h-8 text-blue-500" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Streams</p>
-                  <p className="text-2xl font-bold">{stats.totalStreams}</p>
+                  <p className="text-2xl font-bold">156</p>
+                  <p className="text-sm text-muted-foreground">Followers</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
+          
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Eye className="w-5 h-5 text-green-600" />
-                </div>
+                <Video className="w-8 h-8 text-green-500" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Views</p>
-                  <p className="text-2xl font-bold">{stats.totalViewers.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">12</p>
+                  <p className="text-sm text-muted-foreground">Live Sessions</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
+          
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-orange-600" />
-                </div>
+                <Eye className="w-8 h-8 text-purple-500" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Watch Time</p>
-                  <p className="text-2xl font-bold">{formatWatchTime(stats.totalWatchTime)}</p>
+                  <p className="text-2xl font-bold">2.4K</p>
+                  <p className="text-sm text-muted-foreground">Total Views</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
+          
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                </div>
+                <TrendingUp className="w-8 h-8 text-orange-500" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg. Viewers</p>
-                  <p className="text-2xl font-bold">{stats.avgViewers}</p>
+                  <p className="text-2xl font-bold">89%</p>
+                  <p className="text-sm text-muted-foreground">Engagement</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* My Streams */}
+        {/* Live Now & Stories */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>My Streams</CardTitle>
-                <CardDescription>Manage your live streams and recordings</CardDescription>
-              </div>
-              <Button 
-                onClick={() => setIsCreatingStream(true)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Stream
-              </Button>
+              <CardTitle>Live Now & Recent Updates</CardTitle>
+              <Badge variant="success" className="animate-pulse">
+                {mockStories.filter(s => s.isLive).length} Live
+              </Badge>
             </div>
+            <CardDescription>
+              See what&apos;s happening in your community right now
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userStreams.map((stream) => (
-                <Card key={stream.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video bg-gray-200 relative overflow-hidden">
-                    {stream.thumbnailUrl ? (
-                      <img 
-                        src={stream.thumbnailUrl} 
-                        alt={stream.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
-                        <Video className="w-12 h-12 text-white" />
-                      </div>
-                    )}
-                    
-                    {stream.isLive && (
-                      <Badge className="absolute top-2 left-2 bg-red-500 animate-pulse">
-                        <div className="w-2 h-2 bg-white rounded-full mr-1"></div>
-                        LIVE
-                      </Badge>
-                    )}
-                    
-                    {!stream.isLive && stream.duration && (
-                      <Badge className="absolute bottom-2 right-2 bg-black/70 text-white">
-                        {formatDuration(stream.duration)}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold line-clamp-2 mb-2">{stream.title}</h3>
-                    {stream.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {stream.description}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                      <div className="flex items-center space-x-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{stream.viewerCount} views</span>
-                      </div>
-                      {stream.startedAt && (
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{stream.startedAt.toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      {stream.isLive ? (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => router.push(`/live/${stream.id}`)}
-                        >
-                          <Video className="w-4 h-4 mr-2" />
-                          Join Live
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => startLiveStream(stream.id)}
-                        >
-                          <Play className="w-4 h-4 mr-2" />
-                          Go Live
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <HighlightsRail stories={mockStories} />
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm">Started "Morning Prayer Session"</p>
-                  <p className="text-xs text-muted-foreground">2 hours ago</p>
+        {/* Recent Activity & Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Sessions */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Sessions</CardTitle>
+                <CardDescription>
+                  Your latest live streams and recordings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {mockRecentSessions.map((session) => (
+                    <div key={session.id} className="flex space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="relative">
+                        <Image 
+                          src={session.thumbnail} 
+                          alt={session.title}
+                          width={96}
+                          height={64}
+                          className="w-24 h-16 rounded-lg object-cover"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Button size="icon" variant="secondary" className="w-8 h-8">
+                            <Play className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{session.title}</h4>
+                        <p className="text-sm text-muted-foreground">by {session.host}</p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span className="text-sm text-muted-foreground">{session.duration}</span>
+                          <div className="flex items-center space-x-1">
+                            <Eye className="w-4 h-4" />
+                            <span className="text-sm">{session.views}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Heart className="w-4 h-4" />
+                            <span className="text-sm">{session.likes}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon">
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm">Received 23 new followers</p>
-                  <p className="text-xs text-muted-foreground">Yesterday</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm">Stream "Bible Study" reached 100 views</p>
-                  <p className="text-xs text-muted-foreground">2 days ago</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="w-4 h-4 mr-2" />
-                Schedule Stream
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="w-4 h-4 mr-2" />
-                Manage Community
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                View Analytics
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Settings className="w-4 h-4 mr-2" />
-                Stream Settings
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Quick Actions */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>
+                  Common tasks and shortcuts
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button className="w-full justify-start" variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Group
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Schedule Event
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  New Message
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <Users className="w-4 h-4 mr-2" />
+                  Invite Friends
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Events */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Upcoming Events</CardTitle>
+                <CardDescription>
+                  Don&apos;t miss these scheduled events
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Jan</p>
+                      <p className="text-2xl font-bold">18</p>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">Youth Meeting</h4>
+                      <p className="text-sm text-muted-foreground">7:00 PM</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Jan</p>
+                      <p className="text-2xl font-bold">21</p>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">Sunday Service</h4>
+                      <p className="text-sm text-muted-foreground">10:00 AM</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
-
-      {/* Create Stream Modal */}
-      {isCreatingStream && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Create New Stream</CardTitle>
-              <CardDescription>
-                Set up your live stream to connect with your community
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Stream Title</Label>
-                <Input
-                  id="title"
-                  value={newStreamTitle}
-                  onChange={(e) => setNewStreamTitle(e.target.value)}
-                  placeholder="Enter stream title..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  value={newStreamDescription}
-                  onChange={(e) => setNewStreamDescription(e.target.value)}
-                  placeholder="Describe your stream..."
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setIsCreatingStream(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={createNewStream}
-                  disabled={!newStreamTitle.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                >
-                  Create Stream
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
